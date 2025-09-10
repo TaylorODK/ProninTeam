@@ -1,0 +1,11 @@
+[tool.black]
+line-length = 79
+extend-exclude = '''
+/(
+  \.git
+  |\.venv
+  |migrations
+  |tests
+)/
+|manage.py
+'''

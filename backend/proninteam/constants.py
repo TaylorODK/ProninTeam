@@ -4,11 +4,14 @@ MAX_DIGITS = 7
 DECIMAL_PLACES = 2
 
 # Наименования поводов сбора
-REASON = {
-    "День рождения": "date_birth",
-    "Свадьба": "wedding",
-    "Корпоратив": "company_party",
-}
-FORMAT = {"Онлайн": "online", "Офлайн": "offline"}
+REASON = [
+    ("date_birth", "День рождения"),
+    ("wedding", "Свадьба"),
+    ("company_party", "Корпоратив"),
+]
+FORMAT = [
+    ("online", "Онлайн"),
+    ("offline", "Офлайн"),
+]
 
 API_VERSION = "v1"
