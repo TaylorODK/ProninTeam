@@ -6,7 +6,7 @@ from proninteam.constants import (
     MAX_DIGITS,
     DECIMAL_PLACES,
     FORMAT,
-    REASON
+    REASON,
 )
 
 
@@ -18,17 +18,15 @@ class Collect(models.Model):
     """
     Модель сбора для пользователей.
     Для полей target_amount и total_amount по умолчанию установлены значения 0.
-    При данном значении сбор считает бесконечным и будет завершен только после 
-    достижения даты окончания сбора или если автор сбора самостоятельно деактивирует сбор.
-    Повторная активация сбора автором невозможна. 
+    При данном значении сбор считает бесконечным и будет завершен только после
+    достижения даты окончания сбора или если автор сбора
+    самостоятельно деактивирует сбор.
+    Возможна повторная активация сбора автором.
     """
 
     # --- Описание сбора
     author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        blank=False,
-        verbose_name="Автор сбора"
+        User, on_delete=models.CASCADE, blank=False, verbose_name="Автор сбора"
     )
     name = models.CharField(
         max_length=NAME_MAX_LENGTH,
@@ -60,7 +58,7 @@ class Collect(models.Model):
         verbose_name="Активность сбора",
     )
 
-    # --- Описание события 
+    # --- Описание события
     event_format = models.CharField(
         choices=FORMAT, verbose_name="Формат встречи"
     )
@@ -110,12 +108,13 @@ class Collect(models.Model):
 class Payment(models.Model):
     """
     Модель для оплаты пользователем
-    Модель предусматривает возможность пользователей скрыть общую сумму платежа,
-    по умолчанию сумма не скрывается. Дополнительно предусмотрена возможность пользователю
+    Модель предусматривает возможность пользователей скрыть общую сумму
+    платежа, по умолчанию сумма не скрывается.
+    Дополнительно предусмотрена возможность пользователю
     оставить комментарий при платеже.
     """
 
-    user = models.ForeignKey(
+    author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
     )
@@ -151,7 +150,7 @@ class Like(models.Model):
     пользователей поставить лайк платежам.
     """
 
-    user = models.ForeignKey(
+    author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
     )
@@ -172,7 +171,7 @@ class Comment(models.Model):
     Пользователи могут прокомментировать данные об определенных платежах.
     """
 
-    user = models.ForeignKey(
+    author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
     )

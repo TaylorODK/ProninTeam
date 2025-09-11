@@ -12,7 +12,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         model = Comment
         fields = (
             "id",
-            "user",
+            "author",
             "comment",
         )
 
@@ -36,5 +36,5 @@ class CommentShowSerializer(serializers.ModelSerializer):
         )
 
     def get_username(self, obj):
-        full_name = f"{obj.user.first_name} {obj.user.last_name}".strip()
+        full_name = f"{obj.author.first_name} {obj.author.last_name}".strip()
         return full_name or obj.username

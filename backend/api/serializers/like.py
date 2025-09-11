@@ -10,4 +10,4 @@ class LikeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Like
-        fields = ("id", "user", "payment")
+        fields = ("id", "author", "payment")

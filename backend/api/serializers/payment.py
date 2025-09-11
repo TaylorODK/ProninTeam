@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
+from django.utils import timezone
+from django.db.models import Sum
 
 from api.models import Payment, Collect
 from api.serializers import CommentShowSerializer
@@ -8,29 +10,44 @@ from api.serializers import CommentShowSerializer
 class PaymentCreateSerializer(serializers.ModelSerializer):
     """
     Сериализатор для создания платежей пользователями.
-    Валидация сериализатора проверяет статус сбора (is_active),
-    достижение общей суммы сборы, а также дату завершения сбора.
-    В случае, если сбор не активен - платеж будет отклонен.
-    В случае, если общая сумма сбора уже достигнута либо достигнута
-    дата завершения сбора, статус сбора будет изменен на false и платеж
-    будет отклонен.
+    Валидация сериализатора проверяет следующее:
+    - статус сбора;
+    - достижение до момента платежа максимальной суммы сбора;
+    - достижение даты завершения сбора;
+    - достигает ли сумма платежа минимальной суммы платежа сбора.
     """
 
     class Meta:
         model = Payment
-        fields = ("user", "collect", "amount", "hide_amount")
+        fields = ("author", "collect", "amount", "hide_amount")
 
     def validate(self, data):
         collect = data.get("collect")
         if not collect.is_active:
-            raise ValidationError("Сбор завершен, платежи более не принимаются")
-        if collect.total_amount and collect.total_amount > 0:
-            current_sum = collect.payment_set.aggregate(Sum("amount"))["amount__sum"] or 0
+            raise ValidationError(
+                "Сбор завершен, платежи более не принимаются"
+            )
+        if collect.total_amount:
+            current_sum = (
+                collect.payment_set.aggregate(Sum("amount"))["amount__sum"]
+                or 0
+            )
             if current_sum + data["amount"] > collect.total_amount:
                 collect.is_active = False
                 collect.save(update_fields=["is_active"])
-                raise ValidationError("Сбор завершен, платежи более не принимаются")
-
+                raise ValidationError(
+                    "Сбор завершен, платежи более не принимаются"
+                )
+        if collect.stop_date <= timezone.now():
+            collect.is_active = False
+            collect.save(update_fields=["is_active"])
+            raise ValidationError(
+                "Сбор завершен по достижению даты завершения сбора"
+            )
+        if collect.min_payment > data.get("amount"):
+            raise ValidationError(
+                f"Минимальная сумма платежа {collect.min_payment}"
+            )
         return data
 
 
@@ -38,8 +55,9 @@ class PaymentShowSerializer(serializers.ModelSerializer):
     """
     Сериализатор отображения данных о платежах
     В сериализаторе добавлены дополнительные поля:
-     - show_amount отображение суммы платежа пользователя, в случае если пользователь
-    при создании платежа указал hide_amount = True, в данных платежа вместо суммы будует
+     - show_amount отображение суммы платежа пользователя,
+    в случае если пользователь при создании платежа указал
+    hide_amount = True, в данных платежа вместо суммы будует
     указано "Сумма скрыта";
     - commets отображение комментариев пользователей;
     - comments_count отображение количества комментариев;
@@ -53,7 +71,7 @@ class PaymentShowSerializer(serializers.ModelSerializer):
         model = Payment
         fields = (
             "id",
-            "user",
+            "author",
             "collect",
             "show_amount",
             "created_at",
