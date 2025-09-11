@@ -16,5 +16,8 @@ from api.serializers.payment import (
 # Модель Collect
 
 
+# User
+from api.serializers.user import CustomUserCreateSerializer
+
 # flake8: noqa
 # ruff: noqa

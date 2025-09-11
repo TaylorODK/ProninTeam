@@ -3,7 +3,7 @@ from rest_framework.serializers import ValidationError
 from django.utils import timezone
 
 from api.models import Payment, Collect
-from api.serializers import EventSerializer, PaymentShowSerializer
+from api.serializers import PaymentShowSerializer
 
 
 class CollectCreateSerializer(serializers.ModelSerializer):
@@ -29,7 +29,6 @@ class CollectCreateSerializer(serializers.ModelSerializer):
 
 
 class CollectShowSerializer(serializers.ModelSerializer):
-    event = EventSerializer(read_only=True)
     payments = PaymentShowSerializer(
         many=True,
         read_only=True,
@@ -44,7 +43,11 @@ class CollectShowSerializer(serializers.ModelSerializer):
             "author",
             "name",
             "slug",
-            "reason",
+            "event_format",
+            "event_reason",
+            "event_date",
+            "event_time",
+            "event_place",
             "description",
             "min_payment",
             "target_amount",

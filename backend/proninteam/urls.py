@@ -23,4 +23,6 @@ from proninteam.constants import API_VERSION
 urlpatterns = [
     path("admin/", admin.site.urls),
     path(f"api/{API_VERSION}/", include("api.urls"), name="api"),
+    path(f"api/{API_VERSION}/", include("djoser.urls")),
+    path(f"api/{API_VERSION}/", include("djoser.urls.jwt")),
 ]
