@@ -1,5 +1,6 @@
 from rest_framework import permissions
 
+
 class AuthorPermission(permissions.BasePermission):
     """
     Разрешение для проверки, является ли

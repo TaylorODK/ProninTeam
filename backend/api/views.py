@@ -2,7 +2,12 @@ from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
+from rest_framework.mixins import (
+    CreateModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    DestroyModelMixin,
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
@@ -35,7 +40,7 @@ class LikeViewSet(CreateModelMixin, GenericViewSet):
         user = self.request.user
         payment = get_object_or_404(Payment, id=self.kwargs.get("post_id"))
         serializer.save(author=user, payment=payment)
-    
+
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
         return Response(
@@ -44,7 +49,7 @@ class LikeViewSet(CreateModelMixin, GenericViewSet):
                 "Message": "Лайк успешно создан",
                 "Data": response.data,
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -67,7 +72,7 @@ class CommentViewSet(CreateModelMixin, GenericViewSet):
                 "Message": "Комментарий успешно создан",
                 "Data": response.data,
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -94,7 +99,7 @@ class CollectViewSet(ModelViewSet):
         return Collect.objects.prefetch_related(
             Prefetch(
                 "payments",
-                queryset=Payment.objects.prefetch_related("comments", "likes")
+                queryset=Payment.objects.prefetch_related("comments", "likes"),
             )
         )
 
@@ -113,9 +118,7 @@ class CollectViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.action == "create":
-            return [
-                IsAuthenticated()
-            ]
+            return [IsAuthenticated()]
         return [
             AuthorPermission(),
         ]
@@ -132,7 +135,7 @@ class CollectViewSet(ModelViewSet):
                 {
                     "Succes": True,
                     "Message": "Сбор успешно создан",
-                    "Data": serializer.data
+                    "Data": serializer.data,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -145,14 +148,13 @@ class CollectViewSet(ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    @action(
-        methods=["PATCH"],
-        url_path="activate"
-    )
+    @action(methods=["PATCH"], url_path="activate")
     def activate(self, request):
         user = self.request.user
         collect = get_object_or_404(Collect, id=self.kwargs.get("collect_id"))
-        serializer = CollectReactivateSerializer(collect, author=user, data=request.data, partial=True)
+        serializer = CollectReactivateSerializer(
+            collect, author=user, data=request.data, partial=True
+        )
         if serializer.is_valid():
             try:
                 serializer.save()
