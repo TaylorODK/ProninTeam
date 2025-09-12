@@ -13,6 +13,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "author",
+            "payment",
             "comment",
         )
 

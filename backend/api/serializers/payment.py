@@ -66,6 +66,7 @@ class PaymentShowSerializer(serializers.ModelSerializer):
 
     show_amount = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField()
+    likes = serializers.IntegerField(source="likes.count", read_only=True)
 
     class Meta:
         model = Payment

@@ -113,6 +113,12 @@ class CollectReactivateSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def validate(self, data):
+        collect = self.instance
+        if collect.is_active:
+            raise ValidationError("Сбор все еще активен")
+        return data
+
     def update(self, instance, validated_data):
         new_amount = validated_data.get("new_amount")
         new_stop_date = validated_data.get("new_stop_date")
@@ -139,3 +145,25 @@ class CollectChangeSerializer(serializers.ModelSerializer):
             "event_reason",
             "event_date",
         )
+
+
+class CollectDeactivateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Collect
+        fields = (
+            "id",
+            "author",
+        )
+
+    def validate(self, data):
+        collect = self.instance
+        if collect.is_active:
+            raise ValidationError("Сбор уже остановлен")
+        return data
+
+    def update(self, instance, validated_data):
+        collect = instance
+        collect.is_active = False
+        collect.save()
+        return collect

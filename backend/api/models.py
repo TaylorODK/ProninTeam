@@ -78,7 +78,7 @@ class Collect(models.Model):
 
     # --- Данные по объемам сбора
     min_payment = models.DecimalField(
-        default=models.SET_NULL,
+        default=0,
         verbose_name="Минимальная сумма платежа",
         max_digits=MAX_DIGITS,
         decimal_places=DECIMAL_PLACES,
@@ -139,6 +139,7 @@ class Payment(models.Model):
         return f"{self.user.username}"
 
     class Meta:
+        default_related_name="payments"
         verbose_name = "Сбор"
         verbose_name_plural = "Сборы"
 
@@ -176,6 +177,7 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
     )
     comment = models.TextField(verbose_name="Текст комментария")
+    payment = models.ForeignKey(Payment, verbose_name="Платеж", on_delete=models.CASCADE)
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Дата и время комментария",

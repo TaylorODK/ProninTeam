@@ -14,7 +14,13 @@ from api.serializers.payment import (
 )
 
 # Модель Collect
-
+from api.serializers.collect import (
+    CollectShowSerializer,
+    CollectCreateSerializer,
+    CollectReactivateSerializer,
+    CollectChangeSerializer,
+    CollectDeactivateSerializer,
+)
 
 # User
 from api.serializers.user import CustomUserCreateSerializer
