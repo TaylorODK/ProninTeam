@@ -46,6 +46,7 @@ class Collect(models.Model):
         upload_to="collect/",
         verbose_name="Обложка сбора",
         blank=True,
+        null=True,
     )
     created_at = models.DateTimeField(
         auto_now_add=True,

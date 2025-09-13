@@ -69,7 +69,7 @@ class LikeViewSet(CreateModelMixin, GenericViewSet):
         url_path=("delete"),
         methods=["DELETE"]
     )
-    def delete_by_id(self, request, *args, **kwargs):
+    def delete_like(self, request, *args, **kwargs):
         payment = get_object_or_404(Payment, id=self.kwargs.get("payment_id"))
         like = Like.objects.filter(author=self.request.user, payment=payment).first()
         if not like:
@@ -90,7 +90,7 @@ class LikeViewSet(CreateModelMixin, GenericViewSet):
             )
 
 
-class CommentViewSet(DestroyModelMixin, GenericViewSet):
+class CommentViewSet(CreateModelMixin, DestroyModelMixin, GenericViewSet):
 
     queryset = Comment.objects.all()
     serializer_class = CommentCreateSerializer
@@ -145,7 +145,7 @@ class PaymentViewSet(CreateModelMixin, GenericViewSet):
         serializer.save(author=self.request.user, collect=collect)
 
 
-class CollectViewSet(RetrieveModelMixin, DestroyModelMixin, GenericViewSet):
+class CollectViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, GenericViewSet):
 
     queryset = Collect.objects.all()
     permission_classes = [AuthorPermission]
@@ -181,20 +181,16 @@ class CollectViewSet(RetrieveModelMixin, DestroyModelMixin, GenericViewSet):
             AuthorPermission(),
         ]
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
     def create(self, request):
         serializer = CollectCreateSerializer(data=request.data)
         if serializer.is_valid():
-            print(serializer.data)
             try:
-                serializer.save()
-            except Exception:
+                serializer.save(author=self.request.user)
+            except Exception as e:
                 return Response(
                     {
                         "success": False,
-                        "message": "Ошибка создания сбора",
+                        "message": f"Ошибка создания сбора {str(e)}",
                         "errors": serializer.errors,
                     },
                     status=status.HTTP_400_BAD_REQUEST,

@@ -16,6 +16,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
             "payment",
             "comment",
         )
+        read_only_fields = ("author", "payment")
 
 
 class CommentShowSerializer(serializers.ModelSerializer):
