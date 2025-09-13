@@ -1,12 +1,31 @@
+import base64
+import uuid
+
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 from django.utils import timezone
+from django.core.files.base import ContentFile
+from django.core.validators import MinValueValidator
 
 from api.models import Payment, Collect
 from api.serializers import PaymentShowSerializer
+from proninteam.constants import MAX_DIGITS, DECIMAL_PLACES
+
+
+class Base64ImageField(serializers.ImageField):
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith("data:image"):
+            format, imgstr = data.split(";base64,")
+            ext = format.split("/")[-1]
+            filename = f"{uuid.uuid4()}.{ext}"
+            data = ContentFile(base64.b64decode(imgstr), name=filename)
+
+        return super().to_internal_value(data)
 
 
 class CollectCreateSerializer(serializers.ModelSerializer):
+    logo = Base64ImageField(required=True, allow_null=True)
+
     class Meta:
         model = Collect
         fields = (
@@ -35,6 +54,7 @@ class CollectShowSerializer(serializers.ModelSerializer):
     )
     summ = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
+    logo = serializers.SerializerMethodField()
 
     class Meta:
         model = Collect
@@ -80,6 +100,13 @@ class CollectShowSerializer(serializers.ModelSerializer):
 
 
 class CollectReactivateSerializer(serializers.ModelSerializer):
+    new_amount = serializers.DecimalField(
+        decimal_places=DECIMAL_PLACES,
+        max_digits=MAX_DIGITS,
+        write_only=True,
+        validators=[MinValueValidator(0)],
+    )
+    new_stop_date = serializers.DateTimeField(write_only=True)
 
     class Meta:
         model = Collect
@@ -97,7 +124,7 @@ class CollectReactivateSerializer(serializers.ModelSerializer):
             and value > collect.total_amount
         ):
             raise ValidationError(
-                "Новая цель сбора не должна превышать общей суммы"
+                f"Новая цель сбора не должна превышать общей суммы {collect.total_amount} р."
             )
         return value
 
@@ -109,7 +136,7 @@ class CollectReactivateSerializer(serializers.ModelSerializer):
         collect = self.instance
         if collect and value <= collect.stop_date:
             raise ValidationError(
-                "Новая дата завершения сбора должна быть позже текущей даты завершения"
+                f"Новая дата завершения сбора должна быть позже текущей даты завершения {collect.stop_date}"
             )
         return value
 
@@ -120,8 +147,8 @@ class CollectReactivateSerializer(serializers.ModelSerializer):
         return data
 
     def update(self, instance, validated_data):
-        new_amount = validated_data.get("new_amount")
-        new_stop_date = validated_data.get("new_stop_date")
+        new_amount = validated_data.pop("new_amount", None)
+        new_stop_date = validated_data.pop("new_stop_date", None)
         collect = instance
         if new_amount:
             collect.target_amount = new_amount
@@ -151,14 +178,11 @@ class CollectDeactivateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collect
-        fields = (
-            "id",
-            "author",
-        )
+        fields = ("id",)
 
     def validate(self, data):
         collect = self.instance
-        if collect.is_active:
+        if not collect.is_active:
             raise ValidationError("Сбор уже остановлен")
         return data
 

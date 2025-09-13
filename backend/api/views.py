@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.db.models import Prefetch, Sum
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
@@ -38,7 +39,7 @@ class LikeViewSet(CreateModelMixin, GenericViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
-        payment = get_object_or_404(Payment, id=self.kwargs.get("post_id"))
+        payment = get_object_or_404(Payment, id=self.kwargs.get("payment_id"))
         serializer.save(author=user, payment=payment)
 
     def create(self, request, *args, **kwargs):
@@ -83,10 +84,16 @@ class PaymentViewSet(CreateModelMixin, GenericViewSet):
     permission_classes = [IsAuthenticated]
     lookup_field = "id"
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["collect"] = get_object_or_404(
+            Collect, id=self.kwargs.get("collect_id")
+        )
+        return context
+
     def perform_create(self, serializer):
-        user = self.request.user
-        payment = get_object_or_404(Payment, id=self.kwargs.get("payment_id"))
-        serializer.save(author=user, payment=payment)
+        collect = get_object_or_404(Collect, id=self.kwargs.get("collect_id"))
+        serializer.save(author=self.request.user, collect=collect)
 
 
 class CollectViewSet(ModelViewSet):
@@ -96,7 +103,9 @@ class CollectViewSet(ModelViewSet):
     lookup_field = "id"
 
     def get_queryset(self):
-        return Collect.objects.prefetch_related(
+        return Collect.objects.annotate(
+            payments_sum=Sum("payments__amount")
+        ).prefetch_related(
             Prefetch(
                 "payments",
                 queryset=Payment.objects.prefetch_related("comments", "likes"),
@@ -123,14 +132,24 @@ class CollectViewSet(ModelViewSet):
             AuthorPermission(),
         ]
 
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
     def create(self, request):
-        user = self.request.user
-        serializer = CollectCreateSerializer(author=user, data=request.data)
+        serializer = CollectCreateSerializer(data=request.data)
         if serializer.is_valid():
+            print(serializer.data)
             try:
                 serializer.save()
             except Exception:
-                return Response("Ошибка создания сбора")
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Ошибка создания сбора",
+                        "errors": serializer.errors,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             return Response(
                 {
                     "Succes": True,
@@ -148,18 +167,24 @@ class CollectViewSet(ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    @action(methods=["PATCH"], url_path="activate")
-    def activate(self, request):
-        user = self.request.user
-        collect = get_object_or_404(Collect, id=self.kwargs.get("collect_id"))
+    @action(detail=True, methods=["PATCH"], url_path="activate")
+    def activate(self, request, id=None):
+        collect = self.get_object()
         serializer = CollectReactivateSerializer(
-            collect, author=user, data=request.data, partial=True
+            collect, data=request.data, partial=True
         )
         if serializer.is_valid():
             try:
                 serializer.save()
             except Exception:
-                return Response("Ошибка активации сбора")
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Ошибка активации сбора",
+                        "errors": serializer.errors,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             return Response(
                 {
                     "Succes": True,
@@ -178,13 +203,13 @@ class CollectViewSet(ModelViewSet):
         )
 
     @action(
+        detail=True,
         methods=["PATCH"],
         url_path="deactivate",
     )
-    def deactivate(self, request):
-        user = self.request.user
-        collect = get_object_or_404(Collect, id=self.kwargs.get("collect_id"))
-        serializer = CollectDeactivateSerializer(collect, author=user)
+    def deactivate(self, request, id=None):
+        collect = self.get_object()
+        serializer = CollectDeactivateSerializer(collect, data=request.data)
         if serializer.is_valid():
             try:
                 serializer.save()

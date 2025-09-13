@@ -17,6 +17,10 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+)
 
 from proninteam.constants import API_VERSION
 
@@ -25,4 +29,14 @@ urlpatterns = [
     path(f"api/{API_VERSION}/", include("api.urls"), name="api"),
     path(f"api/{API_VERSION}/", include("djoser.urls")),
     path(f"api/{API_VERSION}/", include("djoser.urls.jwt")),
+    path(
+        f"api/{API_VERSION}/schema/",
+        SpectacularAPIView.as_view(),
+        name="schema",
+    ),
+    path(
+        f"api/{API_VERSION}/swagger/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger",
+    ),
 ]

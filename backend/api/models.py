@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator
 
 from proninteam.constants import (
     NAME_MAX_LENGTH,
@@ -44,6 +45,7 @@ class Collect(models.Model):
     logo = models.ImageField(
         upload_to="collect/",
         verbose_name="Обложка сбора",
+        blank=True,
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -53,7 +55,6 @@ class Collect(models.Model):
         verbose_name="Дата и время завершения сбора",
     )
     is_active = models.BooleanField(
-        editable=False,
         default=True,
         verbose_name="Активность сбора",
     )
@@ -82,18 +83,21 @@ class Collect(models.Model):
         verbose_name="Минимальная сумма платежа",
         max_digits=MAX_DIGITS,
         decimal_places=DECIMAL_PLACES,
+        validators=[MinValueValidator(0)],
     )
     target_amount = models.DecimalField(
         default=0,
         verbose_name="Целевая сумма сбора",
         max_digits=MAX_DIGITS,
         decimal_places=DECIMAL_PLACES,
+        validators=[MinValueValidator(0)],
     )
     total_amount = models.DecimalField(
         default=0,
         verbose_name="Общая цель сбора сбора",
         max_digits=MAX_DIGITS,
         decimal_places=DECIMAL_PLACES,
+        validators=[MinValueValidator(0)],
     )
 
     def __str__(self):
@@ -126,6 +130,7 @@ class Payment(models.Model):
         max_digits=MAX_DIGITS,
         decimal_places=DECIMAL_PLACES,
         verbose_name="Сумма платежа",
+        validators=[MinValueValidator(0)],
     )
     hide_amount = models.BooleanField(
         default=False,

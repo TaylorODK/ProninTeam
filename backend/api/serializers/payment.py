@@ -20,17 +20,17 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = ("author", "collect", "amount", "hide_amount")
+        read_only_fields = ("author", "collect")
 
     def validate(self, data):
-        collect = data.get("collect")
+        collect = self.context["collect"]
         if not collect.is_active:
             raise ValidationError(
                 "Сбор завершен, платежи более не принимаются"
             )
         if collect.total_amount:
             current_sum = (
-                collect.payment_set.aggregate(Sum("amount"))["amount__sum"]
-                or 0
+                collect.payments.aggregate(Sum("amount"))["amount__sum"] or 0
             )
             if current_sum + data["amount"] > collect.total_amount:
                 collect.is_active = False
@@ -67,6 +67,9 @@ class PaymentShowSerializer(serializers.ModelSerializer):
     show_amount = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField()
     likes = serializers.IntegerField(source="likes.count", read_only=True)
+    comments_count = serializers.IntegerField(
+        source="comments.count", read_only=True
+    )
 
     class Meta:
         model = Payment
@@ -89,4 +92,4 @@ class PaymentShowSerializer(serializers.ModelSerializer):
         return f"{amount} р."
 
     def get_comments(self, obj):
-        return CommentShowSerializer(obj.prefetched_comments, many=True).data
+        return CommentShowSerializer(obj.comments, many=True).data
