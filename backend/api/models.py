@@ -169,6 +169,11 @@ class Like(models.Model):
         default_related_name = "likes"
         verbose_name = "Лайк"
         verbose_name_plural = "Лайки"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("author", "payment"), name="unique_like"
+            )
+        ]
 
 
 class Comment(models.Model):

@@ -6,7 +6,6 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.mixins import (
     CreateModelMixin,
     RetrieveModelMixin,
-    UpdateModelMixin,
     DestroyModelMixin,
 )
 from rest_framework.permissions import IsAuthenticated
@@ -16,10 +15,8 @@ from rest_framework.response import Response
 from api.models import Collect, Payment, Comment, Like
 from api.serializers import (
     LikeSerializer,
-    CommentShowSerializer,
     CommentCreateSerializer,
     PaymentCreateSerializer,
-    PaymentShowSerializer,
     CollectShowSerializer,
     CollectCreateSerializer,
     CollectReactivateSerializer,
@@ -35,7 +32,21 @@ class LikeViewSet(CreateModelMixin, GenericViewSet):
 
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action == "create":
+            return [IsAuthenticated()]
+        return [
+            AuthorPermission(),
+        ]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["payment"] = get_object_or_404(
+            Payment, id=self.kwargs.get("payment_id")
+        )
+        context["author"] = self.request.user
+        return context
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -53,12 +64,43 @@ class LikeViewSet(CreateModelMixin, GenericViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+    @action(
+        detail=False,
+        url_path=("delete"),
+        methods=["DELETE"]
+    )
+    def delete_by_id(self, request, *args, **kwargs):
+        payment = get_object_or_404(Payment, id=self.kwargs.get("payment_id"))
+        like = Like.objects.filter(author=self.request.user, payment=payment).first()
+        if not like:
+            return Response(
+                {
+                    "Succes": False,
+                    "Message": "Лайк не был найден",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        like.delete()
+        return Response(
+                {
+                    "Succes": True,
+                    "Message": "Лайк удален",
+                },
+                status=status.HTTP_200_OK,
+            )
 
-class CommentViewSet(CreateModelMixin, GenericViewSet):
+
+class CommentViewSet(DestroyModelMixin, GenericViewSet):
 
     queryset = Comment.objects.all()
     serializer_class = CommentCreateSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action == "create":
+            return [IsAuthenticated()]
+        return [
+            AuthorPermission(),
+        ]
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -75,6 +117,13 @@ class CommentViewSet(CreateModelMixin, GenericViewSet):
             },
             status=status.HTTP_201_CREATED,
         )
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class PaymentViewSet(CreateModelMixin, GenericViewSet):
@@ -96,7 +145,7 @@ class PaymentViewSet(CreateModelMixin, GenericViewSet):
         serializer.save(author=self.request.user, collect=collect)
 
 
-class CollectViewSet(ModelViewSet):
+class CollectViewSet(RetrieveModelMixin, DestroyModelMixin, GenericViewSet):
 
     queryset = Collect.objects.all()
     permission_classes = [AuthorPermission]
@@ -119,7 +168,7 @@ class CollectViewSet(ModelViewSet):
             return CollectShowSerializer
         if self.action == "activate":
             return CollectReactivateSerializer
-        if self.action == "update":
+        if self.action == "partial_update":
             return CollectChangeSerializer
         if self.action == "deactivate":
             return CollectDeactivateSerializer
@@ -231,3 +280,10 @@ class CollectViewSet(ModelViewSet):
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

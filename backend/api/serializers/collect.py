@@ -124,7 +124,9 @@ class CollectReactivateSerializer(serializers.ModelSerializer):
             and value > collect.total_amount
         ):
             raise ValidationError(
-                f"Новая цель сбора не должна превышать общей суммы {collect.total_amount} р."
+                f"Новая цель сбора не должна превышать общей суммы {
+                    collect.total_amount
+                    } р."
             )
         return value
 
@@ -136,7 +138,8 @@ class CollectReactivateSerializer(serializers.ModelSerializer):
         collect = self.instance
         if collect and value <= collect.stop_date:
             raise ValidationError(
-                f"Новая дата завершения сбора должна быть позже текущей даты завершения {collect.stop_date}"
+                "Новая дата завершения сбора должна"
+                f"быть позже текущей даты завершения {collect.stop_date}"
             )
         return value
 
