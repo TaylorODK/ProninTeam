@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.core.cache import cache
 from django.db.models import Prefetch, Sum
 from rest_framework import status
 from rest_framework.decorators import action
@@ -64,14 +65,12 @@ class LikeViewSet(CreateModelMixin, GenericViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    @action(
-        detail=False,
-        url_path=("delete"),
-        methods=["DELETE"]
-    )
+    @action(detail=False, url_path=("delete"), methods=["DELETE"])
     def delete_like(self, request, *args, **kwargs):
         payment = get_object_or_404(Payment, id=self.kwargs.get("payment_id"))
-        like = Like.objects.filter(author=self.request.user, payment=payment).first()
+        like = Like.objects.filter(
+            author=self.request.user, payment=payment
+        ).first()
         if not like:
             return Response(
                 {
@@ -82,12 +81,12 @@ class LikeViewSet(CreateModelMixin, GenericViewSet):
             )
         like.delete()
         return Response(
-                {
-                    "Succes": True,
-                    "Message": "Лайк удален",
-                },
-                status=status.HTTP_200_OK,
-            )
+            {
+                "Succes": True,
+                "Message": "Лайк удален",
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class CommentViewSet(CreateModelMixin, DestroyModelMixin, GenericViewSet):
@@ -120,7 +119,9 @@ class CommentViewSet(CreateModelMixin, DestroyModelMixin, GenericViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
@@ -145,7 +146,9 @@ class PaymentViewSet(CreateModelMixin, GenericViewSet):
         serializer.save(author=self.request.user, collect=collect)
 
 
-class CollectViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, GenericViewSet):
+class CollectViewSet(
+    CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, GenericViewSet
+):
 
     queryset = Collect.objects.all()
     permission_classes = [AuthorPermission]
@@ -180,6 +183,18 @@ class CollectViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, Ge
         return [
             AuthorPermission(),
         ]
+
+    def retrieve(self, request, *args, **kwargs):
+        collect_id = kwargs["id"]
+        cache_key = f"collect_detail_{collect_id}"
+        data = cache.get(cache_key)
+        if not data:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            data = serializer.data
+            cache.set(cache_key, data, timeout=60*5)
+        return Response(data)
+
 
     def create(self, request):
         serializer = CollectCreateSerializer(data=request.data)
@@ -279,7 +294,9 @@ class CollectViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, Ge
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
