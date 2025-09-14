@@ -192,9 +192,8 @@ class CollectViewSet(
             instance = self.get_object()
             serializer = self.get_serializer(instance)
             data = serializer.data
-            cache.set(cache_key, data, timeout=60*5)
+            cache.set(cache_key, data, timeout=60 * 5)
         return Response(data)
-
 
     def create(self, request):
         serializer = CollectCreateSerializer(data=request.data)

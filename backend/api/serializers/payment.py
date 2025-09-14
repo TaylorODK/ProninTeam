@@ -32,7 +32,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
             current_sum = (
                 collect.payments.aggregate(Sum("amount"))["amount__sum"] or 0
             )
-            if current_sum + data["amount"] > collect.total_amount:
+            if current_sum > collect.total_amount:
                 collect.is_active = False
                 collect.save(update_fields=["is_active"])
                 raise ValidationError(

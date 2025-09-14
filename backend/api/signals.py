@@ -1,5 +1,6 @@
 from typing import Any
 
+from django.db.models import Sum
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.core.cache import cache
@@ -40,3 +41,12 @@ def send_email_to_payment_author(sender, instance, created, **kwargs):
 
     if created:
         send_payment_created_email.delay(payment_id=instance.id)
+
+
+@receiver(post_save, sender=Payment)
+def make_inactive_collect(sender, instance, **kwargs):
+    collect = instance.collect
+    current_sum = collect.payments.aggregate(Sum("amount"))["amount__sum"] or 0
+    if current_sum > collect.total_amount:
+        collect.is_active = False
+        collect.save(update_fields=["is_active"])

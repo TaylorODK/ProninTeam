@@ -142,12 +142,12 @@ class Payment(models.Model):
     )
 
     def __str__(self):
-        return f"{self.user.username}"
+        return f"{self.author.username}"
 
     class Meta:
         default_related_name = "payments"
-        verbose_name = "Сбор"
-        verbose_name_plural = "Сборы"
+        verbose_name = "Платеж"
+        verbose_name_plural = "Платежи"
 
 
 class Like(models.Model):
