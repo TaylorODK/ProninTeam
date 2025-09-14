@@ -4,6 +4,11 @@ from django.contrib.auth.models import User
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
+    """
+    Кастомный сериализатор регистрации пользователя.
+    Необходим для обязательного заполнения пользователем имени и фамилии.
+    """
+
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
 

@@ -30,6 +30,7 @@ from api.permissions import AuthorPermission
 
 
 class LikeViewSet(CreateModelMixin, GenericViewSet):
+    """Вьюсет для создания и удаление лайков."""
 
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
@@ -90,6 +91,7 @@ class LikeViewSet(CreateModelMixin, GenericViewSet):
 
 
 class CommentViewSet(CreateModelMixin, DestroyModelMixin, GenericViewSet):
+    """Вьюсет для создания, удаления и редактирования комментариев."""
 
     queryset = Comment.objects.all()
     serializer_class = CommentCreateSerializer
@@ -128,6 +130,7 @@ class CommentViewSet(CreateModelMixin, DestroyModelMixin, GenericViewSet):
 
 
 class PaymentViewSet(CreateModelMixin, GenericViewSet):
+    """Вьюсет для создания платежей."""
 
     queryset = Payment.objects.all()
     serializer_class = PaymentCreateSerializer
@@ -149,6 +152,7 @@ class PaymentViewSet(CreateModelMixin, GenericViewSet):
 class CollectViewSet(
     CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, GenericViewSet
 ):
+    """Вьюсет для создания, просмотря, редактирования, активации/деактивации, а также удаления сборов."""
 
     queryset = Collect.objects.all()
     permission_classes = [AuthorPermission]

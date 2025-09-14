@@ -4,6 +4,8 @@ from api.models import Collect
 
 
 class Command(BaseCommand):
+    """Обновление поля is_active для всех сборов после заполнения БД."""
+
     help = "Обновляет is_active для всех Collect"
 
     def handle(self, *args, **options):
