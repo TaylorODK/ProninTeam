@@ -12,6 +12,8 @@ stop_date = datetime.now() + timedelta(days=random.randint(1, 30))
 
 
 class Command(BaseCommand):
+    """Заполнение БД тестовыми данными."""
+
     help = "Populate DB with mock data for Collect, Payment, Like, Comment"
 
     def add_arguments(self, parser):

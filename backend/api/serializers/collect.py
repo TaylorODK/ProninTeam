@@ -27,6 +27,8 @@ class Base64ImageField(serializers.ImageField):
 
 
 class CollectCreateSerializer(serializers.ModelSerializer):
+    """"Сериализатор для создания сбора."""
+
     logo = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
@@ -51,6 +53,13 @@ class CollectCreateSerializer(serializers.ModelSerializer):
 
 
 class CollectShowSerializer(serializers.ModelSerializer):
+    """"
+    Сериализатор для просмотра сбора.
+    Дополнительные поля:
+    - платеж;
+    - статус.
+    """
+
     payments = PaymentShowSerializer(
         many=True,
         read_only=True,
@@ -103,6 +112,8 @@ class CollectShowSerializer(serializers.ModelSerializer):
 
 
 class CollectReactivateSerializer(serializers.ModelSerializer):
+    """"Сериализатор активации сбора."""
+
     new_amount = serializers.DecimalField(
         decimal_places=DECIMAL_PLACES,
         max_digits=MAX_DIGITS,
@@ -166,6 +177,15 @@ class CollectReactivateSerializer(serializers.ModelSerializer):
 
 
 class CollectChangeSerializer(serializers.ModelSerializer):
+    """"
+    Сериализатор редактирования сбора.
+    Доступные для редактирования поля:
+    - наименование сбора;
+    - описание;
+    - формат события;
+    - тип события;
+    - дата события.
+    """
 
     class Meta:
         model = Collect
@@ -174,13 +194,13 @@ class CollectChangeSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "event_format",
-            "event_format",
             "event_reason",
             "event_date",
         )
 
 
 class CollectDeactivateSerializer(serializers.ModelSerializer):
+    """"Сериализатор деактивации сбора."""
 
     class Meta:
         model = Collect
